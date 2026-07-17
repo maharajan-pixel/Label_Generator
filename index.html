@@ -15,19 +15,11 @@
                         brand: {
                             50: '#eef2ff',
                             100: '#e0e7ff',
-                            200: '#c7d2fe',
-                            300: '#a5b4fc',
-                            400: '#818cf8',
-                            500: '#6366f1', // Indigo 500
+                            500: '#6366f1', // Indigo
                             600: '#4f46e5',
                             700: '#4338ca',
-                            800: '#3730a3',
                             900: '#312e81',
-                            950: '#1e1b4b',
                         }
-                    },
-                    boxShadow: {
-                        'soft': '0 10px 40px -10px rgba(0,0,0,0.08)',
                     }
                 }
             }
@@ -37,40 +29,35 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Google Fonts (Comprehensive List) -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@300;400;600;700&family=Montserrat:wght@300;400;500;600;700&family=Oswald:wght@400;500;600&family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Roboto+Mono:wght@400;500&family=Oswald:wght@400;500;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- SheetJS (XLSX) parser library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        /* Custom Scrollbar for a polished look */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* Visual Guidelines for screen preview */
+        /* Screen visual guidelines */
         .sheet-guideline {
             outline: 1px dashed rgba(99, 102, 241, 0.4);
             outline-offset: -1px;
-            background: rgba(238, 242, 255, 0.3);
+            background: rgba(255, 255, 255, 0.9);
         }
 
-        /* Smooth transitions for UI elements */
-        .tab-content { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Essential Print Overrides for Physical Accuracy */
+        /* Essential Print Overrides */
         @media print {
-            .no-print, header, aside, #modal-overlay {
+            /* Hide UI Elements */
+            .no-print, header, aside, #print-alert-modal, #notification-modal, #manual-entry-modal {
                 display: none !important;
             }
+            
+            /* Release structure locks so pages flow to the printer */
             html, body {
                 width: auto !important;
                 height: auto !important;
@@ -80,45 +67,44 @@
                 padding: 0 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-                display: block !important;
             }
-            .flex-1, main {
-                display: block !important;
+
+            /* Ensure main wrapper doesn't hide contents */
+            main {
                 overflow: visible !important;
-                height: auto !important;
-                width: auto !important;
+                padding: 0 !important;
                 background: transparent !important;
                 box-shadow: none !important;
             }
-            #canvas-print-wrapper {
+
+            #canvas-print-area {
                 display: block !important;
                 position: relative !important;
-                width: 100% !important;
+                transform: none !important; /* Reset zoom */
                 margin: 0 !important;
                 padding: 0 !important;
-                transform: none !important;
-            }
-            #canvas-print-area {
-                transform: none !important;
-                box-shadow: none !important;
-                background: transparent !important;
-                display: block !important;
                 gap: 0 !important;
             }
+
+            /* Strict Page Separation */
             .sticker-page {
                 display: block !important;
                 position: relative !important;
-                margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
+                margin: 0 !important;
+                background: white !important;
                 page-break-before: always !important;
                 page-break-after: always !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
+
             .sticker-page:first-child {
                 page-break-before: avoid !important;
             }
+
+            /* Remove visual UI guidelines on print, but KEEP explicit borders if set */
             .sheet-guideline {
                 outline: none !important;
                 background: transparent !important;
@@ -126,214 +112,168 @@
         }
     </style>
 </head>
-<body class="h-full flex flex-col font-['Inter'] text-slate-800 antialiased overflow-hidden bg-slate-50">
+<body class="h-full flex flex-col font-['Inter'] text-slate-800 antialiased overflow-hidden bg-slate-100">
 
-    <header class="no-print bg-white border-b border-slate-200 flex-none px-6 py-4 flex items-center justify-between shadow-sm z-20 relative">
-        <div class="flex items-center space-x-4">
-            <div class="bg-gradient-to-br from-brand-500 to-brand-700 text-white w-10 h-10 rounded-xl shadow-lg shadow-brand-500/30 flex items-center justify-center">
+    <header class="no-print flex-none bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm z-20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-brand-600 text-white p-2 rounded-lg shadow-md flex items-center justify-center">
                 <i class="fa-solid fa-tags text-xl"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-900 tracking-tight">Label Printer Pro</h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight leading-tight">Label Studio Pro</h1>
                 <p class="text-xs text-slate-500 font-medium">Precision Label & Sticker Generator</p>
             </div>
         </div>
         <div class="flex items-center space-x-3">
-            <button onclick="loadDemoData()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition duration-150 flex items-center gap-2">
-                <i class="fa-solid fa-flask text-brand-500"></i> Load Demo Data
+            <button onclick="loadSampleData()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-200 transition flex items-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-brand-500"></i> Load Demo Data
             </button>
-            <button onclick="triggerPrintPrep()" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg shadow-lg shadow-brand-600/30 transition duration-150 flex items-center gap-2">
+            <button onclick="triggerPrint()" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg shadow-lg shadow-brand-500/30 transition flex items-center gap-2">
                 <i class="fa-solid fa-print"></i> Print Labels
             </button>
         </div>
     </header>
 
-    <!-- Main Workspace Container -->
-    <div class="flex-1 flex overflow-hidden relative">
+    <div class="flex-1 flex overflow-hidden">
         
-        <!-- Left Sidebar Toolbar -->
-        <aside class="no-print w-[420px] flex-none bg-white border-r border-slate-200 flex flex-col h-full overflow-hidden shadow-soft z-10 relative">
+        <aside class="no-print w-[480px] flex-none bg-white border-r border-slate-200 flex flex-col h-full shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10">
             
             <!-- Navigation Tabs -->
-            <div class="flex border-b border-slate-200 bg-slate-50 p-2 gap-1 shrink-0">
-                <button onclick="setActiveTab('data-tab')" id="btn-data-tab" class="tab-btn flex-1 py-2 px-2 rounded-lg text-[11px] uppercase tracking-wider font-bold text-brand-700 bg-white shadow-sm flex flex-col items-center gap-1 transition">
-                    <i class="fa-solid fa-database text-lg mb-0.5"></i> Data Source
+            <div class="flex p-2 bg-slate-50 border-b border-slate-200 gap-1">
+                <button onclick="setActiveTab('data-tab')" id="btn-data-tab" class="tab-btn flex-1 py-2.5 px-2 rounded-md text-[11px] font-bold text-center bg-white text-brand-700 shadow-sm border border-slate-200 flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-database"></i> DATA SOURCE
                 </button>
-                <button onclick="setActiveTab('layout-tab')" id="btn-layout-tab" class="tab-btn flex-1 py-2 px-2 rounded-lg text-[11px] uppercase tracking-wider font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 flex flex-col items-center gap-1 transition">
-                    <i class="fa-solid fa-border-all text-lg mb-0.5"></i> Paper & Grid
+                <button onclick="setActiveTab('layout-tab')" id="btn-layout-tab" class="tab-btn flex-1 py-2.5 px-2 rounded-md text-[11px] font-bold text-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-border-all"></i> PAPER & GRID
                 </button>
-                <button onclick="setActiveTab('design-tab')" id="btn-design-tab" class="tab-btn flex-1 py-2 px-2 rounded-lg text-[11px] uppercase tracking-wider font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 flex flex-col items-center gap-1 transition">
-                    <i class="fa-solid fa-pen-ruler text-lg mb-0.5"></i> Label Design
+                <button onclick="setActiveTab('design-tab')" id="btn-design-tab" class="tab-btn flex-1 py-2.5 px-2 rounded-md text-[11px] font-bold text-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-palette"></i> DESIGN & STYLE
                 </button>
             </div>
 
-            <!-- Scrollable Content Area -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar p-5">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
 
-                <!-- TAB 1: DATA SOURCE -->
-                <div id="data-tab" class="tab-content space-y-6">
+                <!-- TAB 1: DATA IMPORT -->
+                <div id="data-tab" class="tab-content space-y-5">
                     
-                    <!-- Input Methods Tabs -->
-                    <div class="bg-slate-100 p-1 rounded-lg flex gap-1">
-                        <button onclick="setDataSubTab('upload')" id="btn-sub-upload" class="flex-1 py-1.5 text-xs font-bold rounded bg-white shadow-sm text-brand-700">File Upload</button>
-                        <button onclick="setDataSubTab('paste')" id="btn-sub-paste" class="flex-1 py-1.5 text-xs font-bold rounded text-slate-500 hover:text-slate-700">Paste Data</button>
-                        <button onclick="setDataSubTab('manual')" id="btn-sub-manual" class="flex-1 py-1.5 text-xs font-bold rounded text-slate-500 hover:text-slate-700">Manual</button>
-                    </div>
-
-                    <!-- Upload Panel -->
-                    <div id="data-sub-upload" class="space-y-4 block">
-                        <div id="drop-zone" class="border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl p-8 text-center cursor-pointer bg-slate-50 hover:bg-brand-50 transition relative group">
-                            <input type="file" id="file-input" accept=".xlsx, .xls, .csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                            <div class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-3 text-brand-500 group-hover:scale-110 transition-transform">
-                                <i class="fa-solid fa-file-excel text-xl"></i>
+                    <!-- Import Methods -->
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                        <div class="flex border-b border-slate-100">
+                            <button onclick="setImportMethod('upload')" id="btn-import-upload" class="flex-1 py-2 text-xs font-bold text-brand-600 bg-brand-50 border-b-2 border-brand-500">File Upload</button>
+                            <button onclick="setImportMethod('paste')" id="btn-import-paste" class="flex-1 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">Paste Data</button>
+                        </div>
+                        
+                        <div class="p-4">
+                            <!-- Upload Zone -->
+                            <div id="import-upload-zone" class="block">
+                                <div id="drop-zone" class="border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl p-8 text-center cursor-pointer bg-slate-50 hover:bg-brand-50/30 transition group">
+                                    <input type="file" id="file-input" accept=".xlsx, .xls, .csv" class="hidden">
+                                    <i class="fa-solid fa-file-excel text-3xl text-slate-400 group-hover:text-brand-500 mb-3 transition"></i>
+                                    <p class="text-sm font-bold text-slate-700">Drag & Drop Excel/CSV</p>
+                                    <p class="text-[11px] text-slate-500 mt-1">or click to browse files</p>
+                                </div>
                             </div>
-                            <p class="text-sm font-bold text-slate-700 pointer-events-none">Drag & Drop Excel or CSV</p>
-                            <p class="text-xs text-slate-400 mt-1 pointer-events-none">or click to browse files</p>
+                            <!-- Paste Zone -->
+                            <div id="import-paste-zone" class="hidden space-y-2">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase">Paste from Excel or Google Sheets (Include headers)</p>
+                                <textarea id="paste-textarea" class="w-full h-24 p-2 text-[10px] font-mono border border-slate-200 rounded-lg bg-slate-50 focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Name&#9;Designation&#9;Address&#10;John Doe&#9;Manager&#9;123 Main St..."></textarea>
+                                <button onclick="processPastedData()" class="w-full py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 transition">Import Pasted Data</button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Paste Panel -->
-                    <div id="data-sub-paste" class="space-y-3 hidden">
-                        <div class="flex justify-between items-center">
-                            <p class="text-xs text-slate-500 font-medium">Copy cells from Excel and paste here:</p>
-                            <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">Include Headers</span>
+                    <!-- Records Table -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Loaded Records</h3>
+                            <div class="flex gap-2">
+                                <button onclick="clearData()" class="text-[10px] text-rose-500 hover:text-rose-700 font-bold px-2 py-1 bg-rose-50 rounded"><i class="fa-solid fa-trash"></i> Clear All</button>
+                                <button onclick="openManualEntryModal()" class="text-[10px] text-brand-600 hover:text-brand-800 font-bold px-2 py-1 bg-brand-50 rounded"><i class="fa-solid fa-plus"></i> Add Row</button>
+                            </div>
                         </div>
-                        <textarea id="paste-input" class="w-full h-32 p-3 text-xs font-mono bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none custom-scrollbar shadow-inner" placeholder="Name&#9;Designation&#9;Address&#10;John Doe&#9;Manager&#9;123 Main St..."></textarea>
-                        <button onclick="processPastedData()" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition shadow-md flex justify-center items-center gap-2">
-                            <i class="fa-solid fa-bolt"></i> Process Pasted Data
-                        </button>
-                    </div>
-
-                    <!-- Manual Entry Panel -->
-                    <div id="data-sub-manual" class="space-y-3 hidden">
-                        <div class="bg-brand-50 border border-brand-100 p-4 rounded-xl text-center">
-                            <i class="fa-solid fa-keyboard text-brand-500 text-2xl mb-2"></i>
-                            <h3 class="text-sm font-bold text-brand-900 mb-1">Manual Data Entry</h3>
-                            <p class="text-xs text-brand-700 mb-3">Add records one by one directly into the system.</p>
-                            <button onclick="openAddRecordModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg transition shadow flex items-center justify-center gap-2 w-full">
-                                <i class="fa-solid fa-plus"></i> Add New Record
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Data Preview Table -->
-                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-                        <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 flex justify-between items-center">
-                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Loaded Records</h3>
-                            <span id="record-count-badge" class="text-[10px] bg-brand-100 text-brand-800 px-2 py-0.5 rounded-full font-bold">0</span>
-                        </div>
-                        <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
-                            <table class="w-full text-left border-collapse text-xs">
-                                <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
-                                    <tr id="table-headers" class="border-b border-slate-200">
-                                        <th class="p-2 font-semibold text-slate-500 text-[10px] uppercase">Data</th>
-                                        <th class="p-2 font-semibold text-slate-500 text-[10px] uppercase w-10 text-center">Act</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="records-table-body" class="divide-y divide-slate-100">
-                                    <tr><td colspan="2" class="p-4 text-center text-slate-400 italic">No data loaded yet.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="bg-slate-50 p-2 border-t border-slate-200 text-center">
-                            <button onclick="clearAllData()" class="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase tracking-wider"><i class="fa-solid fa-trash-can"></i> Clear All Data</button>
+                        <div class="border border-slate-200 rounded-lg overflow-hidden flex flex-col h-[200px]">
+                            <div class="bg-slate-100 text-[10px] font-bold text-slate-500 uppercase p-2 border-b border-slate-200 flex justify-between">
+                                <span>Data</span>
+                                <span id="record-count-indicator" class="text-brand-600 bg-brand-100 px-1.5 py-0.5 rounded">0</span>
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar bg-white p-1">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <tbody id="records-table-body" class="divide-y divide-slate-100">
+                                        <tr><td class="p-4 text-center text-slate-400 italic text-[11px]">No records loaded. Upload or paste data above.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 2: PAPER & GRID LAYOUT -->
-                <div id="layout-tab" class="tab-content hidden space-y-6">
+                <!-- TAB 2: PAPER & GRID -->
+                <div id="layout-tab" class="tab-content hidden space-y-5">
                     
-                    <!-- Paper Setup -->
-                    <div class="space-y-3">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1">Page Configuration (mm)</h3>
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Paper Size</label>
-                                <select id="page-size-selector" onchange="handlePresetChange()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-2 py-2 text-slate-700 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
-                                    <option value="A4">A4 (210 x 297 mm)</option>
-                                    <option value="Letter">Letter (215.9 x 279.4 mm)</option>
-                                    <option value="Legal">Legal (215.9 x 355.6 mm)</option>
-                                    <option value="A3">A3 (297 x 420 mm)</option>
-                                    <option value="A5">A5 (148 x 210 mm)</option>
-                                    <option value="Custom">Custom Size...</option>
-                                </select>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Width</label>
-                                    <input type="number" id="page-width-input" value="210" oninput="updateLayoutFromInputs()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 text-center font-mono focus:ring-brand-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Height</label>
-                                    <input type="number" id="page-height-input" value="297" oninput="updateLayoutFromInputs()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 text-center font-mono focus:ring-brand-500 outline-none">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Grid Setup -->
-                        <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm mt-3">
-                            <label class="block text-[11px] font-bold text-brand-700 mb-2 uppercase tracking-wide"><i class="fa-solid fa-table-cells text-brand-500"></i> Label Grid Setup</label>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-[10px] text-slate-500 mb-1">Columns (Across)</label>
-                                    <div class="flex items-center gap-1">
-                                        <button onclick="adjustValue('gridCols', -1)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-bold">-</button>
-                                        <input type="number" id="grid-cols-input" value="3" min="1" max="20" oninput="updateLayoutFromInputs()" class="flex-1 h-8 text-center bg-slate-50 border border-slate-300 rounded text-sm font-bold outline-none focus:border-brand-500">
-                                        <button onclick="adjustValue('gridCols', 1)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-bold">+</button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-slate-500 mb-1">Rows (Down)</label>
-                                    <div class="flex items-center gap-1">
-                                        <button onclick="adjustValue('gridRows', -1)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-bold">-</button>
-                                        <input type="number" id="grid-rows-input" value="8" min="1" max="30" oninput="updateLayoutFromInputs()" class="flex-1 h-8 text-center bg-slate-50 border border-slate-300 rounded text-sm font-bold outline-none focus:border-brand-500">
-                                        <button onclick="adjustValue('gridRows', 1)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-bold">+</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="applyPreset('a4-3x8')" id="preset-a4-3x8" class="preset-btn p-3 border-2 border-brand-500 bg-brand-50 rounded-xl text-left transition relative">
+                            <div class="font-bold text-brand-700 text-sm">A4 Standard</div>
+                            <div class="text-[10px] text-brand-600 mt-0.5">3 x 8 Grid (24 labels)</div>
+                            <i class="fa-solid fa-check-circle absolute top-3 right-3 text-brand-500"></i>
+                        </button>
+                        <button onclick="applyPreset('avery-5160')" id="preset-avery-5160" class="preset-btn p-3 border border-slate-200 bg-white hover:border-brand-300 rounded-xl text-left transition relative">
+                            <div class="font-bold text-slate-700 text-sm">Letter (Avery)</div>
+                            <div class="text-[10px] text-slate-500 mt-0.5">3 x 10 Grid (30 labels)</div>
+                        </button>
                     </div>
 
-                    <!-- Dimensions & Spacing -->
-                    <div class="space-y-3 pt-2">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1">Dimensions & Gaps (mm)</h3>
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <!-- Cell Size -->
-                            <div class="space-y-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                                <label class="block text-[10px] font-bold text-slate-700">Cell Width</label>
-                                <input type="number" id="cell-width-input" step="0.1" value="65" oninput="updateLayoutFromInputs()" class="w-full text-xs border border-slate-300 rounded p-1.5 text-center font-mono">
-                                
-                                <label class="block text-[10px] font-bold text-slate-700 pt-1">Cell Height</label>
-                                <input type="number" id="cell-height-input" step="0.1" value="35" oninput="updateLayoutFromInputs()" class="w-full text-xs border border-slate-300 rounded p-1.5 text-center font-mono">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Grid Configuration</h3>
+                            <select id="unit-selector" onchange="switchUnit()" class="text-[10px] font-bold bg-slate-100 border-none rounded px-2 py-1 text-slate-700 outline-none">
+                                <option value="mm">Millimeters (mm)</option>
+                                <option value="in">Inches (in)</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Columns</label>
+                                <input type="number" id="grid-cols-input" min="1" max="15" oninput="updateLayoutAndRender()" class="w-full text-sm bg-slate-50 border border-slate-200 rounded p-1.5 text-center font-bold">
                             </div>
-                            <!-- Gaps -->
-                            <div class="space-y-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                                <label class="block text-[10px] font-bold text-slate-700">Horizontal Gap</label>
-                                <input type="number" id="gap-x-input" step="0.1" value="2.5" oninput="updateLayoutFromInputs()" class="w-full text-xs border border-slate-300 rounded p-1.5 text-center font-mono">
-                                
-                                <label class="block text-[10px] font-bold text-slate-700 pt-1">Vertical Gap</label>
-                                <input type="number" id="gap-y-input" step="0.1" value="0" oninput="updateLayoutFromInputs()" class="w-full text-xs border border-slate-300 rounded p-1.5 text-center font-mono">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Rows</label>
+                                <input type="number" id="grid-rows-input" min="1" max="30" oninput="updateLayoutAndRender()" class="w-full text-sm bg-slate-50 border border-slate-200 rounded p-1.5 text-center font-bold">
                             </div>
                         </div>
 
-                        <!-- Page Margins -->
-                        <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm mt-2">
-                            <label class="block text-[11px] font-bold text-slate-700 mb-2">Page Margins (Top / Bottom / L / R)</label>
-                            <div class="grid grid-cols-4 gap-2">
-                                <input type="number" id="margin-top-input" step="0.1" value="13" oninput="updateLayoutFromInputs()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded p-1.5 text-center font-mono" title="Top Margin">
-                                <input type="number" id="margin-bottom-input" step="0.1" value="13" oninput="updateLayoutFromInputs()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded p-1.5 text-center font-mono" title="Bottom Margin">
-                                <input type="number" id="margin-left-input" step="0.1" value="5" oninput="updateLayoutFromInputs()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded p-1.5 text-center font-mono" title="Left Margin">
-                                <input type="number" id="margin-right-input" step="0.1" value="5" oninput="updateLayoutFromInputs()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded p-1.5 text-center font-mono" title="Right Margin">
+                        <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Label Width (<span class="unit-text">mm</span>)</label>
+                                <input type="number" step="0.1" id="sticker-width-input" oninput="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1.5 text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Label Height (<span class="unit-text">mm</span>)</label>
+                                <input type="number" step="0.1" id="sticker-height-input" oninput="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1.5 text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Horizontal Gap (<span class="unit-text">mm</span>)</label>
+                                <input type="number" step="0.1" id="col-gap-input" oninput="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1.5 text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Vertical Gap (<span class="unit-text">mm</span>)</label>
+                                <input type="number" step="0.1" id="row-gap-input" oninput="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1.5 text-center">
                             </div>
                         </div>
                         
-                        <!-- Internal Padding -->
-                        <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-200">
-                            <label class="text-[11px] font-bold text-slate-700">Internal Text Padding (mm)</label>
-                            <input type="number" id="padding-input" step="0.1" value="3" oninput="updateLayoutFromInputs()" class="w-20 text-xs border border-slate-300 rounded p-1.5 text-center font-mono">
+                        <div class="border-t border-slate-100 pt-3">
+                            <label class="block text-[10px] font-bold text-slate-500 mb-2">Page Margins (<span class="unit-text">mm</span>)</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <div><span class="block text-[8px] text-center text-slate-400 mb-0.5">TOP</span><input type="number" step="0.1" id="margin-top-input" oninput="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1 text-center"></div>
+                                <div><span class="block text-[8px] text-center text-slate-400 mb-0.5">BOTTOM</span><input type="number" step="0.1" id="margin-bottom-input" oninput="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1 text-center"></div>
+                                <div><span class="block text-[8px] text-center text-slate-400 mb-0.5">LEFT</span><input type="number" step="0.1" id="margin-left-input" oninput="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1 text-center"></div>
+                                <div><span class="block text-[8px] text-center text-slate-400 mb-0.5">RIGHT</span><input type="number" step="0.1" id="margin-right-input" oninput="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1 text-center"></div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-100 pt-3 flex items-center justify-between">
+                            <label class="text-[10px] font-bold text-slate-500">Skip First Labels (Reuse Sheet)</label>
+                            <input type="number" id="skip-labels-input" min="0" value="0" oninput="updateLayoutAndRender()" class="w-16 text-xs bg-slate-50 border border-slate-200 rounded p-1 text-center">
                         </div>
                     </div>
                 </div>
@@ -341,280 +281,248 @@
                 <!-- TAB 3: DESIGN & TYPOGRAPHY -->
                 <div id="design-tab" class="tab-content hidden space-y-5">
                     
-                    <!-- Global Typography -->
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                        <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Global Font Family</label>
-                        <select id="global-font-select" onchange="updateDesign()" class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg px-2 py-2 text-slate-800 font-medium focus:ring-brand-500 outline-none">
-                            <option value="'Inter', sans-serif" style="font-family: 'Inter', sans-serif;">Inter (Clean Modern)</option>
-                            <option value="'Roboto', sans-serif" style="font-family: 'Roboto', sans-serif;">Roboto (Corporate)</option>
-                            <option value="'Open Sans', sans-serif" style="font-family: 'Open Sans', sans-serif;">Open Sans (Friendly)</option>
-                            <option value="'Montserrat', sans-serif" style="font-family: 'Montserrat', sans-serif;">Montserrat (Geometric)</option>
-                            <option value="'Poppins', sans-serif" style="font-family: 'Poppins', sans-serif;">Poppins (Rounded)</option>
-                            <option value="'Playfair Display', serif" style="font-family: 'Playfair Display', serif;">Playfair (Elegant Serif)</option>
-                            <option value="'Merriweather', serif" style="font-family: 'Merriweather', serif;">Merriweather (Classic Serif)</option>
-                            <option value="'Oswald', sans-serif" style="font-family: 'Oswald', sans-serif;">Oswald (Condensed)</option>
-                        </select>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Line-by-Line Builder</h3>
+                            <button onclick="addLine()" class="text-[10px] bg-brand-50 text-brand-600 px-2 py-1 rounded font-bold hover:bg-brand-100 transition"><i class="fa-solid fa-plus"></i> Add Line</button>
+                        </div>
+                        <p class="text-[10px] text-slate-400">Map your spreadsheet columns to specific lines and style them individually.</p>
+                        
+                        <div id="lines-container" class="space-y-2">
+                            <!-- Dynamic lines injected here -->
+                        </div>
                     </div>
 
-                    <!-- Visual Line Builder (The "Resize Everything" Solution) -->
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-                            <h3 class="text-xs font-bold text-brand-700 uppercase tracking-wider"><i class="fa-solid fa-layer-group"></i> Label Line Builder</h3>
-                            <button onclick="addLine()" class="text-[10px] bg-brand-100 text-brand-700 hover:bg-brand-200 px-2 py-1 rounded font-bold transition">
-                                <i class="fa-solid fa-plus"></i> Add Line
-                            </button>
-                        </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Printable Cell Borders</h3>
+                        <p class="text-[10px] text-slate-400 leading-tight">Turn on visible borders if you are printing on standard paper and need cut-lines.</p>
                         
-                        <p class="text-[10px] text-slate-500 leading-tight">Customize each line of your label independently. Use `{ColumnName}` to insert data.</p>
-                        
-                        <!-- Available Tags Helper -->
-                        <div class="bg-slate-50 p-2 rounded border border-slate-200">
-                            <span class="text-[9px] font-bold text-slate-400 block mb-1">Available Data Tags (Click to copy):</span>
-                            <div id="available-tags-container" class="flex flex-wrap gap-1">
-                                <span class="text-[10px] italic text-slate-400">Load data to see tags</span>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Border Style</label>
+                                <select id="border-style" onchange="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded px-2 p-1.5 text-slate-700 outline-none">
+                                    <option value="none">None (Invisible)</option>
+                                    <option value="solid">Solid Line</option>
+                                    <option value="dashed">Dashed Line</option>
+                                    <option value="dotted">Dotted Line</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Thickness</label>
+                                <select id="border-thickness" onchange="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded px-2 p-1.5 text-slate-700 outline-none">
+                                    <option value="1">Thin (1px)</option>
+                                    <option value="2">Medium (2px)</option>
+                                    <option value="3">Thick (3px)</option>
+                                </select>
                             </div>
                         </div>
-
-                        <!-- Lines Container -->
-                        <div id="lines-container" class="space-y-3 pt-2">
-                            <!-- Lines generated dynamically via JS -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Border Color</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="border-color" value="#000000" onchange="updateLayoutAndRender()" class="w-8 h-8 rounded cursor-pointer border-none p-0 bg-transparent">
+                                <span class="text-[11px] text-slate-500 font-mono" id="border-color-display">#000000</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Settings & Guidelines -->
-                    <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 space-y-2">
-                        <label class="flex items-center justify-between cursor-pointer">
-                            <span class="text-xs text-slate-700 font-semibold">Show Grid Guidelines</span>
-                            <input type="checkbox" id="show-guidelines" onchange="updateDesign()" class="w-4 h-4 text-brand-600 rounded" checked>
-                        </label>
-                        <label class="flex items-center justify-between cursor-pointer">
-                            <span class="text-xs text-slate-700 font-semibold">Center Entire Label Content</span>
-                            <input type="checkbox" id="center-content" onchange="updateDesign()" class="w-4 h-4 text-brand-600 rounded">
-                        </label>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Padding & Alignment</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Inside Padding (<span class="unit-text">mm</span>)</label>
+                                <input type="number" step="0.5" id="sticker-padding-input" oninput="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1.5 text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Vertical Align</label>
+                                <select id="vertical-align-selector" onchange="updateLayoutAndRender()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded p-1.5 outline-none">
+                                    <option value="flex-start">Top</option>
+                                    <option value="center">Center</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
 
             </div>
-
-            <!-- Sidebar Footer -->
-            <div class="p-4 bg-slate-800 text-slate-300 text-[10px] space-y-2 flex-none border-t-4 border-brand-500">
-                <p class="font-bold text-white uppercase"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Print Requirements:</p>
-                <p>For accurate alignment, set <strong>Scale: 100% / Default</strong> and <strong>Margins: None</strong> in your browser's print dialog.</p>
-                <div class="mt-3 pt-3 border-t border-slate-700 text-center font-medium">
-                    &copy; <span id="current-year"></span> Maha Tech Automation
-                </div>
+            
+            <!-- Branding Footer -->
+            <div class="p-4 bg-slate-900 text-center z-10 border-t border-slate-800">
+                <div class="text-amber-400 text-[9px] font-bold mb-1 uppercase tracking-wider"><i class="fa-solid fa-triangle-exclamation"></i> Print Requirements:</div>
+                <div class="text-[9px] text-slate-400 mb-3">For accurate alignment, set <strong>Scale: 100% / Default</strong> and <strong>Margins: None</strong> in your browser's print dialog.</div>
+                <div class="text-[10px] text-slate-500 font-medium tracking-wide">&copy; 2026 Maha Tech Automation</div>
             </div>
         </aside>
 
         <!-- Right Main Preview Area -->
-        <main class="flex-1 bg-slate-300 overflow-auto relative flex flex-col items-center select-none custom-scrollbar shadow-inner" id="main-preview-container">
+        <main class="flex-1 bg-slate-300 overflow-auto p-8 relative flex flex-col items-center custom-scrollbar">
             
-            <!-- Zoom Controls -->
-            <div class="no-print sticky top-4 z-10 bg-white/90 backdrop-blur text-slate-800 px-4 py-2 rounded-full shadow-lg flex items-center gap-3 border border-slate-200 mb-4 ml-auto mr-4">
-                <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
-                <input type="range" id="zoom-slider" min="30" max="150" value="70" oninput="updateZoom()" class="w-24 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600">
-                <span id="zoom-label" class="text-xs font-mono font-bold w-10 text-right">70%</span>
+            <!-- Floating Zoom Toolbar -->
+            <div class="no-print sticky top-0 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-md flex items-center gap-3 z-10 border border-slate-200 mb-6">
+                <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i>
+                <input type="range" id="preview-zoom-slider" min="30" max="150" value="100" oninput="updatePageZoom()" class="w-32 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-500">
+                <span id="zoom-value-label" class="text-xs font-mono font-bold text-slate-600 w-10 text-right">100%</span>
             </div>
 
-            <!-- The Printable Wrapper -->
-            <div id="canvas-print-wrapper" class="pb-12 flex flex-col items-center gap-8 transition-transform duration-100 origin-top">
-                <div id="canvas-print-area" class="flex flex-col gap-8">
-                    <!-- Pages dynamically injected here -->
-                </div>
+            <!-- Print Canvas Container -->
+            <div id="canvas-print-area" class="print-area origin-top transition-transform duration-150 flex flex-col items-center gap-8 pb-10">
+                <!-- Pages injected here -->
             </div>
         </main>
     </div>
 
-    <!-- Custom Modals Overlay -->
-    <div id="modal-overlay" class="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
-        
-        <!-- Message/Alert Modal -->
-        <div id="alert-modal" class="hidden bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="bg-brand-600 p-4 text-center">
-                <i id="alert-icon" class="fa-solid fa-circle-info text-3xl text-white"></i>
+    <!-- Modals -->
+
+    <!-- Manual Entry Modal -->
+    <div id="manual-entry-modal" class="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800"><i class="fa-solid fa-pen-to-square text-brand-500 mr-2"></i>Add Custom Record</h3>
+                <button onclick="closeModal('manual-entry-modal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
             </div>
-            <div class="p-6 text-center space-y-4">
-                <h3 id="alert-title" class="text-lg font-bold text-slate-800">Notification</h3>
-                <p id="alert-message" class="text-sm text-slate-600">Message goes here.</p>
-                <button onclick="closeModal()" class="mt-4 px-6 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg transition w-full">OK</button>
+            <div class="p-5 space-y-4" id="manual-entry-form">
+                <!-- Dynamically populated inputs based on discovered columns -->
+            </div>
+            <div class="px-5 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+                <button onclick="closeModal('manual-entry-modal')" class="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded shadow-sm hover:bg-slate-50">Cancel</button>
+                <button onclick="saveManualEntry()" class="px-4 py-2 text-xs font-bold text-white bg-brand-600 rounded shadow-sm hover:bg-brand-700">Save Record</button>
             </div>
         </div>
+    </div>
 
-        <!-- Add Record Modal (Replaces Prompt) -->
-        <div id="record-modal" class="hidden bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
-            <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center shrink-0">
-                <h3 class="text-md font-bold text-slate-800"><i class="fa-solid fa-file-pen text-brand-500 mr-2"></i> Add Custom Record</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4" id="record-modal-body">
-                <!-- Dynamic Inputs go here -->
-            </div>
-            <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 shrink-0">
-                <button onclick="closeModal()" class="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-sm font-bold rounded-lg transition">Cancel</button>
-                <button onclick="saveManualRecord()" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg transition shadow-md">Save Record</button>
-            </div>
+    <!-- Alert/Notification Modal -->
+    <div id="notification-modal" class="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[60]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-6">
+            <div id="notification-icon" class="text-4xl mb-3 text-brand-500"><i class="fa-solid fa-circle-info"></i></div>
+            <h3 id="notification-title" class="font-bold text-lg text-slate-800 mb-2">Notice</h3>
+            <p id="notification-message" class="text-sm text-slate-600 mb-6">Message goes here.</p>
+            <button onclick="closeModal('notification-modal')" class="px-6 py-2 w-full text-sm font-bold text-white bg-brand-600 rounded-lg shadow-sm hover:bg-brand-700">Got it</button>
         </div>
+    </div>
 
-        <!-- Print Instructions Modal -->
-        <div id="print-modal" class="hidden bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="p-6 space-y-5">
-                <div class="flex items-center gap-3 text-brand-600 border-b border-slate-100 pb-3">
-                    <i class="fa-solid fa-print text-2xl"></i>
-                    <h3 class="text-lg font-bold text-slate-900">Final Print Settings</h3>
-                </div>
-                <div class="text-sm text-slate-600 space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-200">
-                    <p class="font-bold text-amber-800"><i class="fa-solid fa-triangle-exclamation"></i> Mandatory Browser Settings:</p>
-                    <ul class="list-disc pl-5 space-y-1 text-amber-900 font-medium">
-                        <li>Margins: <strong>None</strong></li>
-                        <li>Scale: <strong>Default (100%)</strong></li>
-                        <li>Headers & Footers: <strong>Off</strong></li>
-                    </ul>
-                </div>
-                <div class="flex justify-end gap-2 pt-2">
-                    <button onclick="closeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition">Cancel</button>
-                    <button onclick="executePrint()" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg transition shadow-md flex items-center gap-2">
-                        <i class="fa-solid fa-check"></i> Continue to Print
-                    </button>
-                </div>
+    <!-- Print Instructions Modal -->
+    <div id="print-alert-modal" class="no-print fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl border border-slate-100 space-y-5 text-center">
+            <div class="w-16 h-16 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-2 text-brand-600 text-3xl">
+                <i class="fa-solid fa-print"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Before you print...</h3>
+            <div class="text-sm text-slate-600 space-y-3 bg-slate-50 p-4 rounded-xl text-left border border-slate-100">
+                <p class="font-medium text-slate-800 text-center mb-2">Check these browser print settings:</p>
+                <ul class="space-y-2">
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span>Paper Size: <strong>Matches your setup (A4)</strong></span></li>
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span>Margins: <strong class="text-red-600">None</strong> (Do NOT use Default)</span></li>
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span>Scale: <strong class="text-red-600">100% / Default</strong></span></li>
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500"></i> <span>Headers/Footers: <strong>Unchecked</strong></span></li>
+                </ul>
+            </div>
+            <div class="pt-2">
+                <button onclick="executePrint()" class="w-full px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-brand-600/30">
+                    Open Print Dialog
+                </button>
+                <button onclick="closeModal('print-alert-modal')" class="mt-3 text-xs font-bold text-slate-500 hover:text-slate-700">Cancel</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Set copyright year
-        document.getElementById('current-year').textContent = new Date().getFullYear();
+        // --- STATE MANAGEMENT ---
+        let sourceRecords = [];
+        let discoveredColumns = [];
+        let currentUnit = 'mm';
 
-        // --- CORE APPLICATION STATE ---
-        const appState = {
-            data: [],
-            columns: [],
-            layout: {
-                paperFormat: 'A4',
-                pageWidth: 210, // mm
-                pageHeight: 297, // mm
-                cols: 3,
-                rows: 8,
-                cellWidth: 63.5,
-                cellHeight: 38.1,
-                gapX: 2.5,
-                gapY: 0,
-                marginTop: 15.1,
-                marginBottom: 15.1,
-                marginLeft: 7.2,
-                marginRight: 7.2,
-                padding: 3
-            },
-            design: {
-                fontFamily: "'Inter', sans-serif",
-                showGuidelines: true,
-                centerContent: false,
-                // The core "Resize Everything" solution: Array of line configurations
-                lines: [
-                    { template: "{Name}", fontSize: 12, lineHeight: 1.2, bold: true, italic: false, align: "left" },
-                    { template: "{Designation}", fontSize: 9, lineHeight: 1.2, bold: false, italic: true, align: "left" },
-                    { template: "{Address}", fontSize: 10, lineHeight: 1.5, bold: false, italic: false, align: "left" }
-                ]
-            }
+        // Layout Configuration Data
+        let layoutConfig = {
+            pageSize: 'A4',
+            gridCols: 3,
+            gridRows: 8,
+            marginTop: 15.1,
+            marginBottom: 15.1,
+            marginLeft: 7.2,
+            marginRight: 7.2,
+            stickerWidth: 63.5,
+            stickerHeight: 38.1,
+            colGap: 2.5,
+            rowGap: 0.0,
+            stickerPadding: 3.0,
+            skipLabels: 0,
+            verticalAlign: 'flex-start'
         };
 
-        // Standard Paper Presets (mm)
-        const PAPER_PRESETS = {
-            'A4': { w: 210, h: 297 },
-            'Letter': { w: 215.9, h: 279.4 },
-            'Legal': { w: 215.9, h: 355.6 },
-            'A3': { w: 297, h: 420 },
-            'A5': { w: 148, h: 210 }
-        };
+        // Line-by-line Design Builder Data
+        let designLines = [
+            { id: 1, text: '{Salutation}', font: 'Inter', size: 10, height: 1.2, weight: '400', align: 'left', prefix: '' },
+            { id: 2, text: '{Name}', font: 'Inter', size: 12, height: 1.2, weight: '700', align: 'left', prefix: '' },
+            { id: 3, text: '{Designation}', font: 'Inter', size: 9, height: 1.2, weight: '600', align: 'left', prefix: '' },
+            { id: 4, text: '{Address}', font: 'Inter', size: 10, height: 1.4, weight: '400', align: 'left', prefix: '' }
+        ];
 
-        // Initialize application on load
-        window.onload = () => {
+        const DEMO_RECORDS = [
+            { "Salutation": "To,", "Name": "Mr. ARUNKUMAR S", "Designation": "Manager - Production", "Address": "O 4, SPIC Nagar Township, Muthiahpuram, Thoothukudi 628005" },
+            { "Salutation": "To,", "Name": "Mr. JAIVIN SELVA ASPAS SINGH J", "Designation": "Executive - Quality", "Address": "B 12, SPIC Nagar, Muthiahpuram, Thoothukudi 628005" },
+            { "Salutation": "To,", "Name": "Ms. PRIYA R", "Designation": "Senior Analyst", "Address": "Sector 4, Main Road, Chennai 600001" }
+        ];
+
+        window.onload = function() {
             setupDragAndDrop();
-            renderLineBuilder();
-            syncLayoutUIFromState();
-            renderPreview();
+            applyPreset('a4-3x8'); 
+            renderDesignLinesUI();
+            
+            // Watch border color picker text
+            document.getElementById('border-color').addEventListener('input', function(e) {
+                document.getElementById('border-color-display').textContent = e.target.value.toUpperCase();
+            });
         };
 
-        // --- UI & TAB MANAGEMENT ---
+        // --- TAB & UI LOGIC ---
         function setActiveTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.className = "tab-btn flex-1 py-2 px-2 rounded-lg text-[11px] uppercase tracking-wider font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 flex flex-col items-center gap-1 transition";
+                btn.className = "tab-btn flex-1 py-2.5 px-2 rounded-md text-[11px] font-bold text-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition";
+                btn.innerHTML = btn.innerHTML.replace('text-brand-500', ''); 
             });
 
             const activeBtn = document.getElementById('btn-' + tabId);
-            activeBtn.className = "tab-btn flex-1 py-2 px-2 rounded-lg text-[11px] uppercase tracking-wider font-bold text-brand-700 bg-white shadow-sm flex flex-col items-center gap-1 transition";
+            activeBtn.className = "tab-btn flex-1 py-2.5 px-2 rounded-md text-[11px] font-bold text-center bg-white text-brand-700 shadow-sm border border-slate-200 flex items-center justify-center gap-1.5 transition";
         }
 
-        function setDataSubTab(mode) {
-            ['upload', 'paste', 'manual'].forEach(m => {
-                document.getElementById(`data-sub-${m}`).classList.add('hidden');
-                document.getElementById(`btn-sub-${m}`).className = "flex-1 py-1.5 text-xs font-bold rounded text-slate-500 hover:text-slate-700";
-            });
-            document.getElementById(`data-sub-${mode}`).classList.remove('hidden');
-            document.getElementById(`btn-sub-${mode}`).className = "flex-1 py-1.5 text-xs font-bold rounded bg-white shadow-sm text-brand-700";
+        function setImportMethod(method) {
+            document.getElementById('import-upload-zone').style.display = method === 'upload' ? 'block' : 'none';
+            document.getElementById('import-paste-zone').style.display = method === 'paste' ? 'block' : 'none';
+            
+            document.getElementById('btn-import-upload').className = method === 'upload' 
+                ? "flex-1 py-2 text-xs font-bold text-brand-600 bg-brand-50 border-b-2 border-brand-500" 
+                : "flex-1 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50";
+            document.getElementById('btn-import-paste').className = method === 'paste' 
+                ? "flex-1 py-2 text-xs font-bold text-brand-600 bg-brand-50 border-b-2 border-brand-500" 
+                : "flex-1 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50";
         }
 
-        // --- CUSTOM MODAL SYSTEM ---
-        function showCustomAlert(title, message, isError = false) {
-            const overlay = document.getElementById('modal-overlay');
-            const alertModal = document.getElementById('alert-modal');
-            const icon = document.getElementById('alert-icon');
+        function showNotification(title, message, isError = false) {
+            document.getElementById('notification-title').textContent = title;
+            document.getElementById('notification-message').textContent = message;
             
-            document.getElementById('alert-title').textContent = title;
-            document.getElementById('alert-message').textContent = message;
-            
+            const icon = document.getElementById('notification-icon');
             if (isError) {
-                icon.className = "fa-solid fa-circle-exclamation text-3xl text-white";
-                alertModal.querySelector('.bg-brand-600').className = "bg-rose-500 p-4 text-center";
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                icon.className = "text-4xl mb-3 text-rose-500";
             } else {
-                icon.className = "fa-solid fa-circle-info text-3xl text-white";
-                alertModal.querySelector('.bg-rose-500')?.classList.replace('bg-rose-500', 'bg-brand-600');
+                icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                icon.className = "text-4xl mb-3 text-emerald-500";
             }
-
-            hideAllModals();
-            overlay.classList.remove('hidden');
-            alertModal.classList.remove('hidden');
             
-            // Trigger animation
-            setTimeout(() => {
-                overlay.classList.remove('opacity-0');
-                alertModal.classList.remove('scale-95');
-            }, 10);
+            document.getElementById('notification-modal').style.display = 'flex';
         }
 
-        function hideAllModals() {
-            ['alert-modal', 'record-modal', 'print-modal'].forEach(id => {
-                const el = document.getElementById(id);
-                el.classList.add('hidden');
-                el.classList.add('scale-95');
-            });
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
         }
 
-        function closeModal() {
-            const overlay = document.getElementById('modal-overlay');
-            overlay.classList.add('opacity-0');
-            hideAllModals();
-            setTimeout(() => overlay.classList.add('hidden'), 300);
-        }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                // Minimal non-intrusive feedback
-                console.log("Copied: " + text);
-            }).catch(() => {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-            });
-        }
-
-        // --- DATA HANDLING (Upload, Paste, Manual) ---
+        // --- DATA HANDLING ---
         function setupDragAndDrop() {
             const dropZone = document.getElementById('drop-zone');
             const fileInput = document.getElementById('file-input');
@@ -634,477 +542,450 @@
         function processFile(file) {
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-                    if (!json.length) throw new Error("File contains no data rows.");
-                    integrateData(json);
-                } catch (error) {
-                    showCustomAlert("Upload Error", "Could not read file. Ensure it's a valid Excel or CSV file with headers.", true);
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                    
+                    if (json.length) {
+                        sourceRecords = json;
+                        finalizeDataImport();
+                        showNotification("Success", `${json.length} records loaded successfully.`);
+                    } else {
+                        showNotification("Empty File", "No data rows found in sheet.", true);
+                    }
+                } catch (err) {
+                    showNotification("Parse Error", "Invalid Excel/CSV format.", true);
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
         function processPastedData() {
-            const raw = document.getElementById('paste-input').value.trim();
-            if (!raw) return showCustomAlert("Empty Data", "Please paste some data first.", true);
-            
-            const rows = raw.split('\n').map(r => r.split('\t'));
-            if (rows.length < 2) return showCustomAlert("Format Error", "Pasted data must contain headers and at least one data row separated by tabs (Excel format).", true);
-
-            const headers = rows[0].map(h => h.trim());
-            const parsedData = [];
-            
-            for (let i = 1; i < rows.length; i++) {
-                const rowObj = {};
-                for (let j = 0; j < headers.length; j++) {
-                    rowObj[headers[j]] = rows[i][j] ? rows[i][j].trim() : "";
-                }
-                // Only add if at least one value exists
-                if (Object.values(rowObj).some(v => v !== "")) parsedData.push(rowObj);
+            const text = document.getElementById('paste-textarea').value.trim();
+            if (!text) {
+                showNotification("No Data", "Please paste data before importing.", true);
+                return;
             }
-            integrateData(parsedData);
-            document.getElementById('paste-input').value = ""; // clear after success
-        }
 
-        function openAddRecordModal() {
-            const body = document.getElementById('record-modal-body');
-            body.innerHTML = "";
-            
-            const fields = appState.columns.length > 0 ? appState.columns : ['Name', 'Designation', 'Address'];
-            
-            fields.forEach(field => {
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <label class="block text-xs font-bold text-slate-700 mb-1">${field}</label>
-                    <input type="text" data-field="${field}" class="manual-input w-full p-2 border border-slate-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-sm">
-                `;
-                body.appendChild(div);
-            });
+            try {
+                const rows = text.split('\n').map(row => row.split('\t'));
+                if (rows.length < 2) throw new Error("Need headers and at least one row.");
 
-            const overlay = document.getElementById('modal-overlay');
-            const modal = document.getElementById('record-modal');
-            hideAllModals();
-            overlay.classList.remove('hidden');
-            modal.classList.remove('hidden');
-            
-            setTimeout(() => {
-                overlay.classList.remove('opacity-0');
-                modal.classList.remove('scale-95');
-                body.querySelector('input')?.focus();
-            }, 10);
-        }
-
-        function saveManualRecord() {
-            const inputs = document.querySelectorAll('.manual-input');
-            const newRecord = {};
-            let hasData = false;
-            
-            inputs.forEach(input => {
-                const val = input.value.trim();
-                newRecord[input.dataset.field] = val;
-                if (val) hasData = true;
-            });
-
-            if (hasData) {
-                if (appState.columns.length === 0) {
-                    appState.columns = Object.keys(newRecord);
+                const headers = rows[0].map(h => h.trim());
+                const parsed = [];
+                
+                for (let i = 1; i < rows.length; i++) {
+                    let obj = {};
+                    rows[i].forEach((val, idx) => {
+                        if (headers[idx]) obj[headers[idx]] = val.trim();
+                    });
+                    parsed.push(obj);
                 }
-                appState.data.push(newRecord);
-                refreshDataUI();
-                closeModal();
+                
+                sourceRecords = parsed;
+                finalizeDataImport();
+                showNotification("Success", `${parsed.length} records pasted successfully.`);
+                document.getElementById('paste-textarea').value = ''; // clear
+            } catch (err) {
+                showNotification("Format Error", "Please ensure pasted data has headers and tab separation (from Excel).", true);
+            }
+        }
+
+        function loadSampleData() {
+            sourceRecords = [...DEMO_RECORDS];
+            finalizeDataImport();
+            showNotification("Demo Loaded", "Sample records injected for testing.");
+        }
+
+        function clearData() {
+            sourceRecords = [];
+            finalizeDataImport();
+        }
+
+        function finalizeDataImport() {
+            if (sourceRecords.length > 0) {
+                discoveredColumns = Object.keys(sourceRecords[0]);
             } else {
-                showCustomAlert("Empty Record", "Please enter at least one value.", true);
+                discoveredColumns = [];
             }
+            updateDataTableUI();
+            renderDesignLinesUI();
+            updateLayoutAndRender();
         }
 
-        function integrateData(newData) {
-            if (appState.data.length === 0) {
-                appState.columns = Object.keys(newData[0]);
-                appState.data = newData;
-                // Auto-map if it's the first data load and lines look unmapped
-                if(appState.design.lines[0].template === "{Name}" && !appState.columns.includes("Name")) {
-                    autoMapTemplateColumns();
-                }
-            } else {
-                // Merge columns
-                const newCols = Object.keys(newData[0]);
-                newCols.forEach(col => { if (!appState.columns.includes(col)) appState.columns.push(col); });
-                appState.data = appState.data.concat(newData);
-            }
-            refreshDataUI();
-            setActiveTab('design-tab'); // Jump to design to see results
-        }
-
-        function autoMapTemplateColumns() {
-            // Intelligent guessing for common fields if defaults don't match
-            const cols = appState.columns.map(c => c.toLowerCase());
-            let nameCol = appState.columns[cols.findIndex(c => c.includes('name') || c.includes('first'))] || appState.columns[0];
-            let titleCol = appState.columns[cols.findIndex(c => c.includes('title') || c.includes('designation') || c.includes('role'))] || (appState.columns[1] || "");
-            let addrCol = appState.columns[cols.findIndex(c => c.includes('address') || c.includes('street'))] || (appState.columns[2] || "");
-
-            appState.design.lines = [];
-            if(nameCol) appState.design.lines.push({ template: `{${nameCol}}`, fontSize: 12, lineHeight: 1.2, bold: true, italic: false, align: "left" });
-            if(titleCol) appState.design.lines.push({ template: `{${titleCol}}`, fontSize: 9, lineHeight: 1.2, bold: false, italic: true, align: "left" });
-            if(addrCol) appState.design.lines.push({ template: `{${addrCol}}`, fontSize: 10, lineHeight: 1.5, bold: false, italic: false, align: "left" });
-            
-            if(appState.design.lines.length === 0) addLine(); // fallback
-            renderLineBuilder();
-        }
-
-        function refreshDataUI() {
-            // Update Badges & Tags
-            document.getElementById('record-count-badge').textContent = appState.data.length;
-            
-            const tagsContainer = document.getElementById('available-tags-container');
-            tagsContainer.innerHTML = "";
-            appState.columns.forEach(col => {
-                const btn = document.createElement('button');
-                btn.className = "text-[10px] bg-slate-200 hover:bg-brand-100 hover:text-brand-700 text-slate-700 px-1.5 py-0.5 rounded cursor-pointer transition font-mono border border-slate-300";
-                btn.textContent = `{${col}}`;
-                btn.onclick = () => copyToClipboard(`{${col}}`);
-                tagsContainer.appendChild(btn);
-            });
-
-            // Update Table
+        function updateDataTableUI() {
             const tbody = document.getElementById('records-table-body');
+            document.getElementById('record-count-indicator').textContent = sourceRecords.length;
             tbody.innerHTML = "";
-            
-            const maxDisplay = 50; // Performance limit for preview table
-            const displayData = appState.data.slice(0, maxDisplay);
 
-            displayData.forEach((rec, idx) => {
+            if (sourceRecords.length === 0) {
+                tbody.innerHTML = `<tr><td class="p-4 text-center text-slate-400 italic text-[11px]">No records loaded.</td></tr>`;
+                return;
+            }
+
+            sourceRecords.forEach((rec, idx) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-50";
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-50 last:border-0";
                 
-                // create a summary string
-                let summary = Object.values(rec).filter(v => v).join(' • ');
-                if (summary.length > 50) summary = summary.substring(0, 50) + '...';
-                
+                let previewText = (rec.Name || rec[discoveredColumns[0]] || "Record") + " • " + (rec.Designation || rec[discoveredColumns[1]] || "");
+                if (previewText.length > 50) previewText = previewText.substring(0, 50) + '...';
+
                 tr.innerHTML = `
-                    <td class="p-2 text-[10px] text-slate-600 truncate max-w-[200px]" title="${summary}">${summary}</td>
-                    <td class="p-2 text-center w-10">
-                        <button onclick="deleteRecord(${idx})" class="text-rose-400 hover:text-rose-600"><i class="fa-solid fa-trash-can"></i></button>
+                    <td class="p-2 font-mono text-[10px] text-slate-600 truncate max-w-xs">${previewText}</td>
+                    <td class="p-2 text-right">
+                        <button onclick="deleteRecord(${idx})" class="text-rose-400 hover:text-rose-600 p-1"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
-            
-            if (appState.data.length > maxDisplay) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="2" class="p-2 text-[10px] text-center text-slate-400 italic border-t border-slate-100">+ ${appState.data.length - maxDisplay} more records</td>`;
-                tbody.appendChild(tr);
-            }
-
-            renderPreview();
         }
 
         function deleteRecord(idx) {
-            appState.data.splice(idx, 1);
-            if(appState.data.length === 0) appState.columns = [];
-            refreshDataUI();
+            sourceRecords.splice(idx, 1);
+            updateDataTableUI();
+            updateLayoutAndRender();
         }
 
-        function clearAllData() {
-            appState.data = [];
-            appState.columns = [];
-            refreshDataUI();
-        }
-
-        function loadDemoData() {
-            const demo = [
-                { "Name": "Ramesh Kumar", "Designation": "Software Engineer", "Address": "45 Tech Park, Block C, Chennai, TN 600113", "Phone": "9876543210" },
-                { "Name": "Priya Sharma", "Designation": "Marketing Head", "Address": "120 Business Avenue, Koramangala, Bengaluru, KA 560034", "Phone": "9876543211" },
-                { "Name": "Amit Patel", "Designation": "Operations Manager", "Address": "Suite 5B, Industrial Estate, Ahmedabad, GJ 380015", "Phone": "9876543212" },
-                { "Name": "Meera Reddy", "Designation": "HR Director", "Address": "78 Jubilee Hills, Road No 10, Hyderabad, TS 500033", "Phone": "9876543213" }
-            ];
-            integrateData(demo);
-        }
-
-        function handlePresetChange() {
-            const val = document.getElementById('page-size-selector').value;
-            appState.layout.paperFormat = val;
+        // Manual entry logic
+        function openManualEntryModal() {
+            const form = document.getElementById('manual-entry-form');
+            form.innerHTML = '';
             
-            if (PAPER_PRESETS[val]) {
-                appState.layout.pageWidth = PAPER_PRESETS[val].w;
-                appState.layout.pageHeight = PAPER_PRESETS[val].h;
-            }
-            syncLayoutUIFromState();
-            renderPreview();
-        }
-
-        function adjustValue(key, delta) {
-            const input = document.getElementById(key === 'gridCols' ? 'grid-cols-input' : 'grid-rows-input');
-            let val = parseInt(input.value) + delta;
-            if(val < 1) val = 1;
-            input.value = val;
-            updateLayoutFromInputs();
-        }
-
-        function updateLayoutFromInputs() {
-            appState.layout.pageWidth = parseFloat(document.getElementById('page-width-input').value) || 210;
-            appState.layout.pageHeight = parseFloat(document.getElementById('page-height-input').value) || 297;
-            appState.layout.cols = parseInt(document.getElementById('grid-cols-input').value) || 1;
-            appState.layout.rows = parseInt(document.getElementById('grid-rows-input').value) || 1;
+            const cols = discoveredColumns.length ? discoveredColumns : ['Name', 'Address'];
             
-            appState.layout.cellWidth = parseFloat(document.getElementById('cell-width-input').value) || 0;
-            appState.layout.cellHeight = parseFloat(document.getElementById('cell-height-input').value) || 0;
-            appState.layout.gapX = parseFloat(document.getElementById('gap-x-input').value) || 0;
-            appState.layout.gapY = parseFloat(document.getElementById('gap-y-input').value) || 0;
-            
-            appState.layout.marginTop = parseFloat(document.getElementById('margin-top-input').value) || 0;
-            appState.layout.marginBottom = parseFloat(document.getElementById('margin-bottom-input').value) || 0;
-            appState.layout.marginLeft = parseFloat(document.getElementById('margin-left-input').value) || 0;
-            appState.layout.marginRight = parseFloat(document.getElementById('margin-right-input').value) || 0;
-            
-            appState.layout.padding = parseFloat(document.getElementById('padding-input').value) || 0;
-
-            // Update format dropdown to "Custom" if values don't match preset
-            const sel = document.getElementById('page-size-selector');
-            if (sel.value !== 'Custom' && PAPER_PRESETS[sel.value]) {
-                if (appState.layout.pageWidth !== PAPER_PRESETS[sel.value].w || appState.layout.pageHeight !== PAPER_PRESETS[sel.value].h) {
-                    sel.value = 'Custom';
-                }
-            }
-
-            renderPreview();
-        }
-
-        function syncLayoutUIFromState() {
-            document.getElementById('page-size-selector').value = appState.layout.paperFormat;
-            document.getElementById('page-width-input').value = appState.layout.pageWidth;
-            document.getElementById('page-height-input').value = appState.layout.pageHeight;
-            
-            document.getElementById('grid-cols-input').value = appState.layout.cols;
-            document.getElementById('grid-rows-input').value = appState.layout.rows;
-            
-            document.getElementById('cell-width-input').value = appState.layout.cellWidth;
-            document.getElementById('cell-height-input').value = appState.layout.cellHeight;
-            document.getElementById('gap-x-input').value = appState.layout.gapX;
-            document.getElementById('gap-y-input').value = appState.layout.gapY;
-            
-            document.getElementById('margin-top-input').value = appState.layout.marginTop;
-            document.getElementById('margin-bottom-input').value = appState.layout.marginBottom;
-            document.getElementById('margin-left-input').value = appState.layout.marginLeft;
-            document.getElementById('margin-right-input').value = appState.layout.marginRight;
-            
-            document.getElementById('padding-input').value = appState.layout.padding;
-        }
-
-        function renderLineBuilder() {
-            const container = document.getElementById('lines-container');
-            container.innerHTML = "";
-
-            appState.design.lines.forEach((line, idx) => {
+            cols.forEach(col => {
                 const div = document.createElement('div');
-                div.className = "bg-white border border-slate-200 rounded-lg p-2 flex flex-col gap-2 shadow-sm";
+                div.innerHTML = `
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">${col}</label>
+                    <input type="text" id="manual-col-${col}" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm">
+                `;
+                form.appendChild(div);
+            });
+            document.getElementById('manual-entry-modal').style.display = 'flex';
+        }
+
+        function saveManualEntry() {
+            const newRecord = {};
+            const cols = discoveredColumns.length ? discoveredColumns : ['Name', 'Address'];
+            
+            let hasData = false;
+            cols.forEach(col => {
+                const val = document.getElementById(`manual-col-${col}`).value.trim();
+                newRecord[col] = val;
+                if (val) hasData = true;
+            });
+
+            if (hasData) {
+                sourceRecords.push(newRecord);
+                if (!discoveredColumns.length) discoveredColumns = cols;
+                finalizeDataImport();
+                closeModal('manual-entry-modal');
+            }
+        }
+
+        // --- LAYOUT & ENGINE ---
+        function applyPreset(type) {
+            if (type === 'a4-3x8') {
+                currentUnit = 'mm';
+                layoutConfig = { pageSize: 'A4', gridCols: 3, gridRows: 8, marginTop: 15.1, marginBottom: 15.1, marginLeft: 7.2, marginRight: 7.2, stickerWidth: 63.5, stickerHeight: 38.1, colGap: 2.5, rowGap: 0.0, stickerPadding: 3.0, skipLabels: layoutConfig.skipLabels, verticalAlign: layoutConfig.verticalAlign };
+            } else if (type === 'avery-5160') {
+                currentUnit = 'in';
+                layoutConfig = { pageSize: 'Letter', gridCols: 3, gridRows: 10, marginTop: 0.5, marginBottom: 0.5, marginLeft: 0.186, marginRight: 0.186, stickerWidth: 2.625, stickerHeight: 1.0, colGap: 0.12, rowGap: 0.0, stickerPadding: 0.1, skipLabels: layoutConfig.skipLabels, verticalAlign: layoutConfig.verticalAlign };
+            }
+
+            document.querySelectorAll('.preset-btn').forEach(b => {
+                b.className = "preset-btn p-3 border border-slate-200 bg-white hover:border-brand-300 rounded-xl text-left transition relative";
+                const icon = b.querySelector('.fa-check-circle');
+                if(icon) icon.remove();
+            });
+            
+            const active = document.getElementById('preset-' + type);
+            if(active) {
+                active.className = "preset-btn p-3 border-2 border-brand-500 bg-brand-50 rounded-xl text-left transition relative";
+                active.innerHTML += '<i class="fa-solid fa-check-circle absolute top-3 right-3 text-brand-500"></i>';
+            }
+
+            syncUIToConfig();
+            updateLayoutAndRender();
+        }
+
+        function switchUnit() {
+            const nextUnit = document.getElementById('unit-selector').value;
+            if (nextUnit === currentUnit) return;
+            const factor = nextUnit === 'mm' ? 25.4 : (1 / 25.4);
+            
+            ['marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'stickerWidth', 'stickerHeight', 'colGap', 'rowGap', 'stickerPadding'].forEach(k => {
+                layoutConfig[k] = parseFloat((layoutConfig[k] * factor).toFixed(3));
+            });
+            currentUnit = nextUnit;
+            syncUIToConfig();
+            updateLayoutAndRender();
+        }
+
+        function syncUIToConfig() {
+            document.getElementById('unit-selector').value = currentUnit;
+            document.querySelectorAll('.unit-text').forEach(e => e.textContent = currentUnit);
+            
+            document.getElementById('grid-cols-input').value = layoutConfig.gridCols;
+            document.getElementById('grid-rows-input').value = layoutConfig.gridRows;
+            document.getElementById('sticker-width-input').value = layoutConfig.stickerWidth;
+            document.getElementById('sticker-height-input').value = layoutConfig.stickerHeight;
+            document.getElementById('col-gap-input').value = layoutConfig.colGap;
+            document.getElementById('row-gap-input').value = layoutConfig.rowGap;
+            document.getElementById('margin-top-input').value = layoutConfig.marginTop;
+            document.getElementById('margin-bottom-input').value = layoutConfig.marginBottom;
+            document.getElementById('margin-left-input').value = layoutConfig.marginLeft;
+            document.getElementById('margin-right-input').value = layoutConfig.marginRight;
+            document.getElementById('sticker-padding-input').value = layoutConfig.stickerPadding;
+            document.getElementById('skip-labels-input').value = layoutConfig.skipLabels;
+            document.getElementById('vertical-align-selector').value = layoutConfig.verticalAlign || 'flex-start';
+        }
+
+        // Pull latest from manual inputs before render
+        function fetchLayoutFromUI() {
+            layoutConfig.gridCols = parseInt(document.getElementById('grid-cols-input').value) || 1;
+            layoutConfig.gridRows = parseInt(document.getElementById('grid-rows-input').value) || 1;
+            layoutConfig.stickerWidth = parseFloat(document.getElementById('sticker-width-input').value) || 0;
+            layoutConfig.stickerHeight = parseFloat(document.getElementById('sticker-height-input').value) || 0;
+            layoutConfig.colGap = parseFloat(document.getElementById('col-gap-input').value) || 0;
+            layoutConfig.rowGap = parseFloat(document.getElementById('row-gap-input').value) || 0;
+            layoutConfig.marginTop = parseFloat(document.getElementById('margin-top-input').value) || 0;
+            layoutConfig.marginBottom = parseFloat(document.getElementById('margin-bottom-input').value) || 0;
+            layoutConfig.marginLeft = parseFloat(document.getElementById('margin-left-input').value) || 0;
+            layoutConfig.marginRight = parseFloat(document.getElementById('margin-right-input').value) || 0;
+            layoutConfig.stickerPadding = parseFloat(document.getElementById('sticker-padding-input').value) || 0;
+            layoutConfig.skipLabels = parseInt(document.getElementById('skip-labels-input').value) || 0;
+            layoutConfig.verticalAlign = document.getElementById('vertical-align-selector').value;
+        }
+
+        // --- DESIGN BUILDER ---
+        function addLine() {
+            const newId = designLines.length > 0 ? Math.max(...designLines.map(l => l.id)) + 1 : 1;
+            designLines.push({
+                id: newId, text: '{Name}', font: 'Inter', size: 10, height: 1.2, weight: '400', align: 'left', prefix: ''
+            });
+            renderDesignLinesUI();
+            updateLayoutAndRender();
+        }
+
+        function removeLine(id) {
+            designLines = designLines.filter(l => l.id !== id);
+            renderDesignLinesUI();
+            updateLayoutAndRender();
+        }
+
+        function updateLineProperty(id, prop, val) {
+            const line = designLines.find(l => l.id === id);
+            if (line) {
+                line[prop] = val;
+                updateLayoutAndRender();
+            }
+        }
+
+        function renderDesignLinesUI() {
+            const container = document.getElementById('lines-container');
+            container.innerHTML = '';
+            
+            // Generate datalist options for column autosuggestion
+            const colOptions = discoveredColumns.map(c => `<option value="{${c}}">`).join('');
+
+            designLines.forEach((line, index) => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-slate-50 border border-slate-200 rounded-lg relative space-y-2";
                 
                 div.innerHTML = `
-                    <div class="flex gap-2 items-center">
-                        <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">L${idx+1}</span>
-                        <input type="text" id="line-txt-${idx}" value="${line.template.replace(/"/g, '&quot;')}" placeholder="e.g. {Name}" class="flex-1 text-xs border border-slate-300 rounded p-1 outline-none focus:border-brand-500 font-mono" oninput="updateLineData(${idx})">
-                        <button onclick="removeLine(${idx})" class="text-rose-400 hover:text-rose-600 px-1"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-400 w-4">${index + 1}.</span>
+                        <input type="text" list="cols-list" value="${line.text}" onchange="updateLineProperty(${line.id}, 'text', this.value)" class="flex-1 text-xs bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-brand-500" placeholder="{ColumnName} or Text">
+                        <button onclick="removeLine(${line.id})" class="text-rose-400 hover:text-rose-600"><i class="fa-solid fa-times"></i></button>
                     </div>
-                    <div class="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded border border-slate-200 flex-wrap">
-                        <div class="flex items-center gap-1" title="Font Size (pt)">
-                            <span class="text-[9px] text-slate-500 font-bold uppercase">Size</span>
-                            <input type="number" id="line-size-${idx}" min="4" max="72" value="${line.fontSize}" class="w-10 h-6 text-xs text-center bg-white border border-slate-300 rounded outline-none focus:border-brand-500" oninput="updateLineData(${idx})">
-                        </div>
-                        <div class="flex items-center gap-1 ml-1" title="Line Height (Spacing)">
-                            <span class="text-[9px] text-slate-500 font-bold uppercase">Height</span>
-                            <input type="number" id="line-height-${idx}" min="0.5" max="5" step="0.1" value="${line.lineHeight || 1.2}" class="w-10 h-6 text-xs text-center bg-white border border-slate-300 rounded outline-none focus:border-brand-500" oninput="updateLineData(${idx})">
-                        </div>
-                        <div class="h-4 w-[1px] bg-slate-300 mx-1"></div>
-                        <div class="flex items-center gap-1">
-                            <button onclick="toggleLineStyle(${idx}, 'bold')" class="w-6 h-6 rounded flex items-center justify-center text-xs transition ${line.bold ? 'bg-brand-100 text-brand-700 border border-brand-300' : 'text-slate-500 hover:bg-slate-200'}"><i class="fa-solid fa-bold"></i></button>
-                            <button onclick="toggleLineStyle(${idx}, 'italic')" class="w-6 h-6 rounded flex items-center justify-center text-xs transition ${line.italic ? 'bg-brand-100 text-brand-700 border border-brand-300' : 'text-slate-500 hover:bg-slate-200'}"><i class="fa-solid fa-italic"></i></button>
-                        </div>
-                        <div class="h-4 w-[1px] bg-slate-300 mx-1"></div>
-                        <div class="flex items-center gap-1">
-                            <button onclick="setLineAlign(${idx}, 'left')" class="w-6 h-6 rounded flex items-center justify-center text-xs transition ${line.align === 'left' ? 'bg-brand-100 text-brand-700 border border-brand-300' : 'text-slate-500 hover:bg-slate-200'}"><i class="fa-solid fa-align-left"></i></button>
-                            <button onclick="setLineAlign(${idx}, 'center')" class="w-6 h-6 rounded flex items-center justify-center text-xs transition ${line.align === 'center' ? 'bg-brand-100 text-brand-700 border border-brand-300' : 'text-slate-500 hover:bg-slate-200'}"><i class="fa-solid fa-align-center"></i></button>
+                    <div class="flex gap-2 pl-6">
+                        <select onchange="updateLineProperty(${line.id}, 'font', this.value)" class="w-24 text-[10px] border border-slate-200 rounded p-1 outline-none">
+                            <option value="Inter" ${line.font==='Inter'?'selected':''}>Inter</option>
+                            <option value="Lato" ${line.font==='Lato'?'selected':''}>Lato</option>
+                            <option value="Oswald" ${line.font==='Oswald'?'selected':''}>Oswald</option>
+                            <option value="Playfair Display" ${line.font==='Playfair Display'?'selected':''}>Serif</option>
+                            <option value="Roboto Mono" ${line.font==='Roboto Mono'?'selected':''}>Mono</option>
+                        </select>
+                        <input type="number" step="0.5" value="${line.size}" onchange="updateLineProperty(${line.id}, 'size', parseFloat(this.value))" class="w-14 text-[10px] border border-slate-200 rounded p-1 outline-none" title="Font Size (pt)">
+                        <input type="number" step="0.1" value="${line.height}" onchange="updateLineProperty(${line.id}, 'height', parseFloat(this.value))" class="w-12 text-[10px] border border-slate-200 rounded p-1 outline-none" title="Line Height">
+                        <select onchange="updateLineProperty(${line.id}, 'weight', this.value)" class="w-20 text-[10px] border border-slate-200 rounded p-1 outline-none">
+                            <option value="400" ${line.weight==='400'?'selected':''}>Normal</option>
+                            <option value="500" ${line.weight==='500'?'selected':''}>Medium</option>
+                            <option value="600" ${line.weight==='600'?'selected':''}>SemiBold</option>
+                            <option value="700" ${line.weight==='700'?'selected':''}>Bold</option>
+                        </select>
+                        <div class="flex border border-slate-200 rounded overflow-hidden">
+                            <button onclick="updateLineProperty(${line.id}, 'align', 'left')" class="px-2 py-0.5 bg-white hover:bg-slate-100 ${line.align==='left'?'bg-slate-200':''}"><i class="fa-solid fa-align-left text-[10px]"></i></button>
+                            <button onclick="updateLineProperty(${line.id}, 'align', 'center')" class="px-2 py-0.5 bg-white hover:bg-slate-100 border-x border-slate-200 ${line.align==='center'?'bg-slate-200':''}"><i class="fa-solid fa-align-center text-[10px]"></i></button>
+                            <button onclick="updateLineProperty(${line.id}, 'align', 'right')" class="px-2 py-0.5 bg-white hover:bg-slate-100 ${line.align==='right'?'bg-slate-200':''}"><i class="fa-solid fa-align-right text-[10px]"></i></button>
                         </div>
                     </div>
                 `;
                 container.appendChild(div);
             });
+
+            // Append datalist for input suggestions
+            if(!document.getElementById('cols-list')) {
+                const dl = document.createElement('datalist');
+                dl.id = 'cols-list';
+                document.body.appendChild(dl);
+            }
+            document.getElementById('cols-list').innerHTML = colOptions;
         }
 
-        function updateLineData(idx) {
-            const line = appState.design.lines[idx];
-            line.template = document.getElementById(`line-txt-${idx}`).value;
-            line.fontSize = parseFloat(document.getElementById(`line-size-${idx}`).value) || 10;
-            line.lineHeight = parseFloat(document.getElementById(`line-height-${idx}`).value) || 1.2;
-            renderPreview();
-        }
-
-        function toggleLineStyle(idx, prop) {
-            appState.design.lines[idx][prop] = !appState.design.lines[idx][prop];
-            renderLineBuilder();
-            renderPreview();
-        }
-        
-        function setLineAlign(idx, align) {
-            appState.design.lines[idx].align = align;
-            renderLineBuilder();
-            renderPreview();
-        }
-
-        function addLine() {
-            appState.design.lines.push({ template: "", fontSize: 10, lineHeight: 1.2, bold: false, italic: false, align: "left" });
-            renderLineBuilder();
-            renderPreview();
-        }
-
-        function removeLine(idx) {
-            appState.design.lines.splice(idx, 1);
-            renderLineBuilder();
-            renderPreview();
-        }
-
-        function updateDesign() {
-            appState.design.fontFamily = document.getElementById('global-font-select').value;
-            appState.design.showGuidelines = document.getElementById('show-guidelines').checked;
-            appState.design.centerContent = document.getElementById('center-content').checked;
-            renderPreview();
-        }
-
-        function renderPreview() {
-            const canvas = document.getElementById('canvas-print-area');
-            canvas.innerHTML = "";
-
-            // Dynamic Print Page Size CSS injection
-            let styleEl = document.getElementById('dynamic-print-style');
+        // --- RENDER ENGINE ---
+        function updateLayoutAndRender() {
+            fetchLayoutFromUI();
+            
+            // Dynamic CSS generation for Print Page Size
+            let styleEl = document.getElementById('print-page-style');
             if (!styleEl) {
                 styleEl = document.createElement('style');
-                styleEl.id = 'dynamic-print-style';
+                styleEl.id = 'print-page-style';
                 document.head.appendChild(styleEl);
             }
-            styleEl.innerHTML = `
-                @media print {
-                    @page {
-                        size: ${appState.layout.pageWidth}mm ${appState.layout.pageHeight}mm;
-                        margin: 0 !important;
-                    }
-                }
-            `;
+            const isA4 = layoutConfig.pageSize === 'A4';
+            styleEl.innerHTML = `@media print { @page { size: ${isA4 ? 'A4 portrait' : 'letter portrait'}; margin: 0 !important; } }`;
 
-            const l = appState.layout;
-            const d = appState.design;
-            const labelsPerPage = l.cols * l.rows;
+            const canvas = document.getElementById('canvas-print-area');
+            canvas.innerHTML = '';
             
-            // Build rendering array
-            let renderData = appState.data.length > 0 ? [...appState.data] : [];
+            const u = currentUnit;
+            const labelsPerPage = layoutConfig.gridCols * layoutConfig.gridRows;
+            const pageWidth = isA4 ? '210mm' : '8.5in';
+            const pageHeight = isA4 ? '297mm' : '11in';
+
+            // Get border configs
+            const bStyle = document.getElementById('border-style').value;
+            const bThick = document.getElementById('border-thickness').value;
+            const bColor = document.getElementById('border-color').value;
+
+            // Generate label HTML blocks based on Design Lines
+            let labelsToRender = [];
             
-            // If empty, generate placeholder blanks for visual preview
-            if (renderData.length === 0) {
-                for (let i = 0; i < labelsPerPage; i++) renderData.push({ _placeholder: true });
+            // Skips
+            for(let s=0; s<layoutConfig.skipLabels; s++) {
+                labelsToRender.push(null);
             }
 
-            const pagesCount = Math.max(1, Math.ceil(renderData.length / labelsPerPage));
-            const guideClass = d.showGuidelines ? 'sheet-guideline' : '';
-            const centerClass = d.centerContent ? 'flex flex-col justify-center' : '';
+            if (sourceRecords.length > 0) {
+                sourceRecords.forEach(rec => {
+                    let cellHTML = `<div style="display:flex; flex-direction:column; justify-content:${layoutConfig.verticalAlign}; height:100%;">`;
+                    
+                    designLines.forEach(line => {
+                        let textContent = line.text;
+                        // Replace {Variables}
+                        Object.keys(rec).forEach(key => {
+                            const regex = new RegExp(`{${key}}`, 'gi');
+                            textContent = textContent.replace(regex, rec[key] || '');
+                        });
+                        // Clean up unmatched braces
+                        textContent = textContent.replace(/{[^}]+}/g, '');
+                        
+                        // Preserve Line breaks (pre-wrap handles this CSS side, just ensure br's if any exist)
+                        textContent = textContent.replace(/\n/g, '<br>');
+
+                        if (textContent.trim() !== '') {
+                            cellHTML += `
+                                <div style="
+                                    font-family: '${line.font}', sans-serif;
+                                    font-size: ${line.size}pt;
+                                    line-height: ${line.height};
+                                    font-weight: ${line.weight};
+                                    text-align: ${line.align};
+                                    white-space: pre-wrap;
+                                    word-break: break-word;
+                                    overflow: hidden;
+                                ">${textContent}</div>
+                            `;
+                        }
+                    });
+                    
+                    cellHTML += `</div>`;
+                    labelsToRender.push(cellHTML);
+                });
+            } else {
+                // Placeholder visuals
+                for(let i=0; i< (labelsPerPage - layoutConfig.skipLabels); i++) {
+                    labelsToRender.push(`<div class="w-full h-full flex flex-col items-center justify-center text-slate-300 italic text-xs"><i class="fa-solid fa-file-lines text-2xl mb-2"></i> No Data</div>`);
+                }
+            }
+
+            // Paginate and build DOM
+            const pagesCount = Math.ceil(labelsToRender.length / labelsPerPage) || 1;
 
             for (let p = 0; p < pagesCount; p++) {
-                const page = document.createElement('div');
-                page.className = "sticker-page bg-white shadow-2xl relative border border-slate-200 shrink-0";
+                const pageEl = document.createElement('div');
+                pageEl.className = "sticker-page relative shrink-0 bg-white";
                 
-                // Set precise physical dimensions
-                page.style.width = `${l.pageWidth}mm`;
-                page.style.height = `${l.pageHeight}mm`;
-                page.style.paddingTop = `${l.marginTop}mm`;
-                page.style.paddingLeft = `${l.marginLeft}mm`;
+                // Visual screen borders
+                pageEl.style.boxShadow = "0 25px 50px -12px rgba(0, 0, 0, 0.15)";
                 
-                // Note: Bottom/Right padding handled inherently by grid + w/h
+                pageEl.style.width = pageWidth;
+                pageEl.style.height = pageHeight;
+                pageEl.style.paddingTop = `${layoutConfig.marginTop}${u}`;
+                pageEl.style.paddingBottom = `${layoutConfig.marginBottom}${u}`;
+                pageEl.style.paddingLeft = `${layoutConfig.marginLeft}${u}`;
+                pageEl.style.paddingRight = `${layoutConfig.marginRight}${u}`;
 
-                const grid = document.createElement('div');
-                grid.style.display = 'grid';
-                grid.style.gridTemplateColumns = `repeat(${l.cols}, ${l.cellWidth}mm)`;
-                grid.style.gridTemplateRows = `repeat(${l.rows}, ${l.cellHeight}mm)`;
-                grid.style.columnGap = `${l.gapX}mm`;
-                grid.style.rowGap = `${l.gapY}mm`;
+                const gridEl = document.createElement('div');
+                gridEl.className = "w-full h-full grid";
+                gridEl.style.gridTemplateColumns = `repeat(${layoutConfig.gridCols}, ${layoutConfig.stickerWidth}${u})`;
+                gridEl.style.gridTemplateRows = `repeat(${layoutConfig.gridRows}, ${layoutConfig.stickerHeight}${u})`;
+                gridEl.style.columnGap = `${layoutConfig.colGap}${u}`;
+                gridEl.style.rowGap = `${layoutConfig.rowGap}${u}`;
 
-                const startIdx = p * labelsPerPage;
-                const pageItems = renderData.slice(startIdx, startIdx + labelsPerPage);
+                const startIndex = p * labelsPerPage;
+                const pageItems = labelsToRender.slice(startIndex, startIndex + labelsPerPage);
+                
+                while(pageItems.length < labelsPerPage) pageItems.push(null);
 
-                for (let i = 0; i < labelsPerPage; i++) {
+                pageItems.forEach(content => {
                     const cell = document.createElement('div');
-                    cell.className = `relative overflow-hidden box-border ${guideClass} ${centerClass}`;
-                    cell.style.width = `${l.cellWidth}mm`;
-                    cell.style.height = `${l.cellHeight}mm`;
-                    cell.style.padding = `${l.padding}mm`;
-                    cell.style.fontFamily = d.fontFamily;
-
-                    const itemData = pageItems[i];
+                    cell.className = "relative overflow-hidden sheet-guideline";
+                    cell.style.width = `${layoutConfig.stickerWidth}${u}`;
+                    cell.style.height = `${layoutConfig.stickerHeight}${u}`;
+                    cell.style.padding = `${layoutConfig.stickerPadding}${u}`;
                     
-                    if (itemData) {
-                        if (itemData._placeholder) {
-                            cell.innerHTML = `<span class="no-print text-[9px] text-slate-300 absolute inset-0 flex items-center justify-center italic">Empty Label</span>`;
-                        } else {
-                            // Render Lines
-                            d.lines.forEach(lineConfig => {
-                                let content = lineConfig.template;
-                                // Regex replace all placeholders {Key}
-                                Object.keys(itemData).forEach(key => {
-                                    const regex = new RegExp(`{${key}}`, 'gi');
-                                    content = content.replace(regex, itemData[key] || '');
-                                });
-                                // Clean unmatched placeholders
-                                content = content.replace(/{[^}]+}/g, '');
-                                
-                                if (content.trim()) {
-                                    const lineDiv = document.createElement('div');
-                                    lineDiv.innerHTML = content;
-                                    lineDiv.style.fontSize = `${lineConfig.fontSize}pt`;
-                                    lineDiv.style.fontWeight = lineConfig.bold ? 'bold' : 'normal';
-                                    lineDiv.style.fontStyle = lineConfig.italic ? 'italic' : 'normal';
-                                    lineDiv.style.textAlign = lineConfig.align;
-                                    lineDiv.style.lineHeight = lineConfig.lineHeight || 1.2;
-                                    lineDiv.style.overflow = 'hidden';
-                                    lineDiv.style.wordBreak = 'break-word';
-                                    lineDiv.style.whiteSpace = 'pre-wrap'; // Allows long strings to wrap smoothly
-                                    cell.appendChild(lineDiv);
-                                }
-                            });
-                        }
+                    // APPLY PRINTABLE BORDERS if enabled (Box-sizing border-box prevents dimension blowout)
+                    if (bStyle !== 'none') {
+                        cell.style.border = `${bThick}px ${bStyle} ${bColor}`;
+                        cell.style.boxSizing = 'border-box';
+                    } else {
+                        cell.style.border = 'none';
+                        cell.style.boxSizing = 'border-box';
                     }
-                    grid.appendChild(cell);
-                }
 
-                page.appendChild(grid);
-                canvas.appendChild(page);
+                    if (content) {
+                        cell.innerHTML = content;
+                    }
+                    gridEl.appendChild(cell);
+                });
+
+                pageEl.appendChild(gridEl);
+                canvas.appendChild(pageEl);
             }
         }
 
-        function updateZoom() {
-            const zoom = document.getElementById('zoom-slider').value;
-            document.getElementById('zoom-label').textContent = `${zoom}%`;
-            document.getElementById('canvas-print-wrapper').style.transform = `scale(${zoom / 100})`;
+        // --- PREVIEW & PRINT ---
+        function updatePageZoom() {
+            const zoom = document.getElementById('preview-zoom-slider').value;
+            document.getElementById('zoom-value-label').textContent = `${zoom}%`;
+            document.getElementById('canvas-print-area').style.transform = `scale(${zoom / 100})`;
         }
 
-        function triggerPrintPrep() {
-            const overlay = document.getElementById('modal-overlay');
-            const modal = document.getElementById('print-modal');
-            hideAllModals();
-            overlay.classList.remove('hidden');
-            modal.classList.remove('hidden');
-            
-            setTimeout(() => {
-                overlay.classList.remove('opacity-0');
-                modal.classList.remove('scale-95');
-            }, 10);
+        function triggerPrint() {
+            document.getElementById('print-alert-modal').style.display = 'flex';
         }
 
         function executePrint() {
-            closeModal();
-            // brief timeout to let modal hide completely before blocking thread with print
-            setTimeout(() => window.print(), 350); 
+            closeModal('print-alert-modal');
+            window.print();
         }
-
     </script>
 </body>
 </html>
